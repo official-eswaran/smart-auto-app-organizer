@@ -56,9 +56,6 @@ android {
         }
     }
 
-    aaptOptions {
-        noCompress += "tflite"
-    }
 }
 
 dependencies {
@@ -75,6 +72,7 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.navigation.compose)
 
     // Room
@@ -99,16 +97,8 @@ dependencies {
     // Coil for app icon loading
     implementation(libs.coil.compose)
 
-    // TFLite — inference engine for ML-based classification
-    implementation(libs.tflite.core)
-    implementation(libs.tflite.support)
-    implementation(libs.tflite.gpu)
-
     // Security — EncryptedSharedPreferences for PIN storage
     implementation(libs.security.crypto)
-
-    // Biometric — fingerprint unlock for locked folders
-    implementation(libs.biometric.ktx)
 
     // Testing
     testImplementation(libs.junit)
