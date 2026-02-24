@@ -6,7 +6,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import com.smartorganizer.launcher.domain.model.AppInfo
-import com.smartorganizer.launcher.engine.RuleEngine
+import com.smartorganizer.launcher.engine.HybridClassifier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -14,14 +14,14 @@ import javax.inject.Singleton
 @Singleton
 class AppScanner @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val ruleEngine: RuleEngine
+    private val hybridClassifier: HybridClassifier
 ) {
     private val pm: PackageManager = context.packageManager
 
     /**
      * Scans for all launchable, non-system apps installed on the device.
      * Uses MAIN + LAUNCHER intent filter to identify launchable apps.
-     * Excludes system apps (FLAG_SYSTEM) unless they are also updated (FLAG_UPDATED_SYSTEM_APP).
+     * Excludes pure system apps (FLAG_SYSTEM) unless updated (FLAG_UPDATED_SYSTEM_APP).
      */
     fun scanInstalledApps(): List<AppInfo> {
         val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -56,20 +56,18 @@ class AppScanner @Inject constructor(
                 val icon = try { pm.getApplicationIcon(packageName) } catch (e: Exception) { null }
                 val installTime = try {
                     pm.getPackageInfo(packageName, 0).firstInstallTime
-                } catch (e: Exception) {
-                    System.currentTimeMillis()
-                }
+                } catch (e: Exception) { System.currentTimeMillis() }
 
-                // Try system category first (API 26+), fallback to RuleEngine
-                val category = mapSystemCategory(appInfo.category, appName, packageName)
+                // Use system category if available, otherwise HybridClassifier
+                val (category, confidence) = resolveCategory(appInfo, appName, packageName)
 
                 AppInfo(
                     packageName = packageName,
                     appName = appName,
                     icon = icon,
-                    category = category.first,
+                    category = category,
                     installTime = installTime,
-                    confidenceScore = category.second
+                    confidenceScore = confidence
                 )
             } catch (e: PackageManager.NameNotFoundException) {
                 null
@@ -77,26 +75,26 @@ class AppScanner @Inject constructor(
         }.sortedBy { it.appName }
     }
 
-    private fun mapSystemCategory(
-        systemCategory: Int,
+    private fun resolveCategory(
+        appInfo: ApplicationInfo,
         appName: String,
         packageName: String
     ): Pair<String, Float> {
-        val systemMapped = when (systemCategory) {
+        // API-level system category hints (high confidence)
+        val systemHint: Pair<String, Float>? = when (appInfo.category) {
             ApplicationInfo.CATEGORY_GAME -> "Games" to 1.0f
             ApplicationInfo.CATEGORY_AUDIO -> "Music" to 1.0f
-            ApplicationInfo.CATEGORY_VIDEO -> "Entertainment" to 1.0f
-            ApplicationInfo.CATEGORY_IMAGE -> "Photos" to 1.0f
+            ApplicationInfo.CATEGORY_VIDEO -> "Entertainment" to 0.9f
+            ApplicationInfo.CATEGORY_IMAGE -> "Photos" to 0.9f
             ApplicationInfo.CATEGORY_SOCIAL -> "Social" to 1.0f
             ApplicationInfo.CATEGORY_NEWS -> "News" to 1.0f
             ApplicationInfo.CATEGORY_MAPS -> "Travel" to 1.0f
-            ApplicationInfo.CATEGORY_PRODUCTIVITY -> null // let RuleEngine decide
             else -> null
         }
+        if (systemHint != null) return systemHint
 
-        return systemMapped ?: run {
-            val result = ruleEngine.classify(appName, packageName)
-            result.category to result.confidence
-        }
+        // Hybrid ML classifier
+        val result = hybridClassifier.classify(appName, packageName)
+        return result.category to result.confidence
     }
 }

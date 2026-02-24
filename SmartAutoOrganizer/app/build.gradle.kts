@@ -55,6 +55,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    aaptOptions {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -94,6 +98,17 @@ dependencies {
 
     // Coil for app icon loading
     implementation(libs.coil.compose)
+
+    // TFLite — inference engine for ML-based classification
+    implementation(libs.tflite.core)
+    implementation(libs.tflite.support)
+    implementation(libs.tflite.gpu)
+
+    // Security — EncryptedSharedPreferences for PIN storage
+    implementation(libs.security.crypto)
+
+    // Biometric — fingerprint unlock for locked folders
+    implementation(libs.biometric.ktx)
 
     // Testing
     testImplementation(libs.junit)

@@ -25,4 +25,10 @@ class FolderRepository @Inject constructor(
     suspend fun getById(id: Long): FolderEntity? = folderDao.getById(id)
 
     suspend fun deleteEmptyFolders() = folderDao.deleteEmptyFolders()
+
+    suspend fun updateSortOrders(orderedIds: List<Long>) {
+        orderedIds.forEachIndexed { index, id ->
+            folderDao.updateSortOrder(id, index)
+        }
+    }
 }

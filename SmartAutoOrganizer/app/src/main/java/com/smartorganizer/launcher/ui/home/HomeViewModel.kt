@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.smartorganizer.launcher.data.local.db.entity.AppEntity
 import com.smartorganizer.launcher.data.repository.AppRepository
 import com.smartorganizer.launcher.data.repository.FolderRepository
+import com.smartorganizer.launcher.security.PinManager
 import com.smartorganizer.launcher.domain.model.AppInfo
 import com.smartorganizer.launcher.domain.model.Folder
 import com.smartorganizer.launcher.domain.usecase.OrganizeFoldersUseCase
@@ -33,7 +34,8 @@ class HomeViewModel @Inject constructor(
     private val scanAppsUseCase: ScanAppsUseCase,
     private val organizeFoldersUseCase: OrganizeFoldersUseCase,
     private val folderRepository: FolderRepository,
-    private val appRepository: AppRepository
+    private val appRepository: AppRepository,
+    private val pinManager: PinManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
@@ -112,6 +114,46 @@ class HomeViewModel @Inject constructor(
     fun moveAppToFolder(packageName: String, folderId: Long) {
         viewModelScope.launch {
             appRepository.setManualOverride(packageName, folderId)
+        }
+    }
+
+    /** Returns true if this folder is PIN-locked. */
+    fun isFolderLocked(folderId: Long): Boolean = pinManager.isLocked(folderId)
+
+    /** Verify PIN for a locked folder. */
+    fun verifyPin(folderId: Long, pin: String): Boolean = pinManager.verifyPin(folderId, pin)
+
+    /** Set a new PIN and mark the folder as locked in DB. */
+    fun setFolderPin(folderId: Long, pin: String) {
+        pinManager.setPin(folderId, pin)
+        viewModelScope.launch {
+            val folder = folderRepository.getById(folderId) ?: return@launch
+            folderRepository.insert(folder.copy(isLocked = true))
+        }
+    }
+
+    /** Remove PIN lock from a folder after verifying the current PIN. */
+    fun removeFolderLock(folderId: Long, pin: String): Boolean {
+        if (!pinManager.verifyPin(folderId, pin)) return false
+        pinManager.clearPin(folderId)
+        viewModelScope.launch {
+            val folder = folderRepository.getById(folderId) ?: return@launch
+            folderRepository.insert(folder.copy(isLocked = false))
+        }
+        return true
+    }
+
+    /** Called after a drag-drop reorder: persists the new sort order to DB. */
+    fun reorderFolders(fromIndex: Int, toIndex: Int) {
+        val current = _uiState.value.folders.toMutableList()
+        if (fromIndex !in current.indices || toIndex !in current.indices) return
+        val moved = current.removeAt(fromIndex)
+        current.add(toIndex, moved)
+        // Optimistic UI update
+        _uiState.value = _uiState.value.copy(folders = current)
+        // Persist new sort order
+        viewModelScope.launch {
+            folderRepository.updateSortOrders(current.map { it.id })
         }
     }
 

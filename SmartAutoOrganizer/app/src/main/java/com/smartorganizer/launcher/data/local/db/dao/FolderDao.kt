@@ -34,4 +34,7 @@ interface FolderDao {
 
     @Query("DELETE FROM folders WHERE id NOT IN (SELECT DISTINCT folderId FROM apps WHERE folderId IS NOT NULL)")
     suspend fun deleteEmptyFolders()
+
+    @Query("UPDATE folders SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun updateSortOrder(id: Long, sortOrder: Int)
 }
