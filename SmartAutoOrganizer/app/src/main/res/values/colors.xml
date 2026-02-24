@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Folder color palette (8 presets) -->
+    <color name="folder_payments">#4CAF50</color>
+    <color name="folder_games">#F44336</color>
+    <color name="folder_social">#2196F3</color>
+    <color name="folder_shopping">#FF9800</color>
+    <color name="folder_music">#9C27B0</color>
+    <color name="folder_health">#00BCD4</color>
+    <color name="folder_travel">#3F51B5</color>
+    <color name="folder_news">#607D8B</color>
+    <color name="folder_others">#9E9E9E</color>
+
+    <!-- Theme colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="surface_dark">#FF1E1E1E</color>
+    <color name="background_dark">#FF121212</color>
+</resources>

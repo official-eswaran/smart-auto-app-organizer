@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart Organizer</string>
+
+    <!-- Category names -->
+    <string name="category_payments">Payments</string>
+    <string name="category_games">Games</string>
+    <string name="category_social">Social</string>
+    <string name="category_shopping">Shopping</string>
+    <string name="category_music">Music</string>
+    <string name="category_health">Health</string>
+    <string name="category_travel">Travel</string>
+    <string name="category_news">News</string>
+    <string name="category_others">Others</string>
+
+    <!-- UI strings -->
+    <string name="loading">Loading apps…</string>
+    <string name="no_apps_found">No apps found</string>
+    <string name="refresh">Refresh</string>
+    <string name="apps_count">%d apps</string>
+    <string name="folder_locked">Folder locked</string>
+</resources>
